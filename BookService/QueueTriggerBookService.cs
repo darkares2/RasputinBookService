@@ -28,7 +28,7 @@ namespace Rasputin.BookService
             var book = cmd.Book;
             if (cmd.Command == "create")
             {
-                await InsertBookAsync(book);
+                await InsertBookAsync(message, book, log);
             } else if (cmd.Command == "list")
             {
                 await ListBooksAsync(message, book.ISBN, log);
@@ -94,7 +94,7 @@ namespace Rasputin.BookService
             await MessageHelper.QueueMessageAsync("api-router", message, log);
         }
 
-        private async Task InsertBookAsync(Books book)
+        private async Task InsertBookAsync(Message receivedMessage, Books book, ILogger log)
         {
             var str = Environment.GetEnvironmentVariable("sqldb_connection");
             string query = "INSERT INTO Books (ISBN, Title, Author, publication_date, Price) VALUES (@ISBN, @Title,@Author,@PublicationDate,@Price)";
@@ -111,6 +111,16 @@ namespace Rasputin.BookService
                     await command.ExecuteNonQueryAsync();
                 }
             }
+            var message = new Message
+            {
+                Headers = receivedMessage.Headers,
+                Body = JsonSerializer.Serialize(book, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                })
+            };
+            await MessageHelper.QueueMessageAsync("api-router", message, log);
+
         }
     }
 }
