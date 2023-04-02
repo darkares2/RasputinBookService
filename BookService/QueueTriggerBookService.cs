@@ -2,19 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.Azure.Storage;
-using Microsoft.Azure.Storage.Queue;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
+using Azure.Messaging.ServiceBus;
 
 namespace Rasputin.BookService
 {
     public class QueueTriggerBookService
     {
         [FunctionName("QueueTriggerBookService")]
-        public async Task RunAsync([QueueTrigger("ms-books", Connection = "rasputinstorageaccount_STORAGE")]string myQueueItem, ILogger log)
+        public async Task RunAsync([ServiceBusTrigger("ms-books", Connection = "rasputinServicebus")]string myQueueItem, ILogger log)
         {
             log.LogInformation($"C# Queue trigger function processed: {myQueueItem}");
             var message = JsonSerializer.Deserialize<Message>(myQueueItem, new JsonSerializerOptions

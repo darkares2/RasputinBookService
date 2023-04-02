@@ -61,7 +61,7 @@
 			"options": {
 				"cwd": "${workspaceFolder}/BookService/bin/Debug/net6.0"
 			},
-			"command": "host start",
+			"command": "host start --port 5023",
 			"isBackground": true,
 			"problemMatcher": "$func-dotnet-watch"
 		}
