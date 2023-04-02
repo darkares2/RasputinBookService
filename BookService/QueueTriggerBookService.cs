@@ -19,6 +19,7 @@ namespace Rasputin.BookService
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             });
+            await MessageHelper.SendLog(message);
             var cmd = JsonSerializer.Deserialize<CmdUpdateBook>(message.Body, new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
