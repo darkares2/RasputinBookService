@@ -6,6 +6,7 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using Azure.Messaging.ServiceBus;
+using System.Linq;
 
 namespace Rasputin.BookService
 {
@@ -20,19 +21,26 @@ namespace Rasputin.BookService
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             });
             await MessageHelper.SendLog(message);
-            var cmd = JsonSerializer.Deserialize<CmdUpdateBook>(message.Body, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
-            var book = cmd.Book;
-            if (cmd.Command == "create")
-            {
-                await InsertBookAsync(message, book, log);
-            } else if (cmd.Command == "list")
-            {
-                await ListBooksAsync(message, book.ISBN, log);
-            } else {
-                log.LogError($"Command {cmd.Command} not supported");
+            try {
+                var cmd = JsonSerializer.Deserialize<CmdUpdateBook>(message.Body, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+                var book = cmd.Book;
+                if (cmd.Command == "create")
+                {
+                    await InsertBookAsync(message, book, log);
+                } else if (cmd.Command == "list")
+                {
+                    await ListBooksAsync(message, book.ISBN, log);
+                } else {
+                    log.LogError($"Command {cmd.Command} not supported");
+                }
+            } catch(Exception ex) {
+                var current = message.Headers.FirstOrDefault(x => x.Name.Equals("current-queue-header"));
+                current.Fields["Name"] = $"Error (Book): {ex.Message}";
+                current.Fields["Timestamp"] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+                await MessageHelper.SendLog(message);
             }
         }
 
