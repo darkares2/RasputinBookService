@@ -16,7 +16,7 @@ namespace Rasputin.BookService
         [FunctionName("QueueTriggerBookService")]
         public async Task RunAsync([ServiceBusTrigger("ms-books", Connection = "rasputinServicebus")]string myQueueItem, ILogger log)
         {
-            log.LogInformation($"C# Queue trigger function processed: {myQueueItem}");
+            log.LogInformation($"ms-books triggered: {myQueueItem}");
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
             DateTime receivedMessageTime = DateTime.UtcNow;
@@ -48,6 +48,7 @@ namespace Rasputin.BookService
                 stopwatch.Stop();
                 await MessageHelper.SendLog(logMessage, receivedMessageTime, stopwatch.ElapsedMilliseconds);
             } catch(Exception ex) {
+                log.LogError("Processing failed", ex);
                 var current = logMessage.Headers.FirstOrDefault(x => x.Name.Equals("current-queue-header"));
                 current.Fields["Name"] = current.Fields["Name"] + $"-Error (Book): {ex.Message}";
                 stopwatch.Stop();
