@@ -7,6 +7,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using Azure.Messaging.ServiceBus;
 using System.Linq;
+using System.Diagnostics;
 
 namespace Rasputin.BookService
 {
@@ -16,11 +17,13 @@ namespace Rasputin.BookService
         public async Task RunAsync([ServiceBusTrigger("ms-books", Connection = "rasputinServicebus")]string myQueueItem, ILogger log)
         {
             log.LogInformation($"C# Queue trigger function processed: {myQueueItem}");
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            DateTime receivedMessageTime = DateTime.UtcNow;
             var message = JsonSerializer.Deserialize<Message>(myQueueItem, new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             });
-            await MessageHelper.SendLog(message);
             try {
                 var cmd = JsonSerializer.Deserialize<CmdUpdateBook>(message.Body, new JsonSerializerOptions
                 {
@@ -36,11 +39,14 @@ namespace Rasputin.BookService
                 } else {
                     log.LogError($"Command {cmd.Command} not supported");
                 }
+                stopwatch.Stop();
+                await MessageHelper.SendLog(message, receivedMessageTime, stopwatch.ElapsedMilliseconds);
             } catch(Exception ex) {
                 var current = message.Headers.FirstOrDefault(x => x.Name.Equals("current-queue-header"));
-                current.Fields["Name"] = $"Error (Book): {ex.Message}";
+                current.Fields["Name"] = current.Fields["Name"] + $"-Error (Book): {ex.Message}";
                 current.Fields["Timestamp"] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-                await MessageHelper.SendLog(message);
+                stopwatch.Stop();
+                await MessageHelper.SendLog(message, receivedMessageTime, stopwatch.ElapsedMilliseconds);
             }
         }
 
