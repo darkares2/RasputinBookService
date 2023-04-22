@@ -154,13 +154,13 @@ namespace Rasputin.BookService
             var str = Environment.GetEnvironmentVariable("sqldb_connection");
             string query = @"
                     MERGE INTO Books AS target
-                    USING (VALUES (@ISBN, @Title, @Author, @PublicationDate, @Price)) AS source (ISBN, Title, Author, PublicationDate, Price)
+                    USING (VALUES (@ISBN, @Title, @Author, @PublicationDate, @Price)) AS source (ISBN, Title, Author, publication_date, Price)
                     ON (target.ISBN = source.ISBN)
                     WHEN MATCHED THEN
-                        UPDATE SET Title = source.Title, Author = source.Author, PublicationDate = source.PublicationDate, Price = source.Price
+                        UPDATE SET Title = source.Title, Author = source.Author, publication_date = source.publication_date, Price = source.Price
                     WHEN NOT MATCHED THEN
-                        INSERT (ISBN, Title, Author, PublicationDate, Price)
-                        VALUES (source.ISBN, source.Title, source.Author, source.PublicationDate, source.Price);
+                        INSERT (ISBN, Title, Author, publication_date, Price)
+                        VALUES (source.ISBN, source.Title, source.Author, source.publication_date, source.Price);
                 ";
             using (SqlConnection connection = new SqlConnection(str))
             {
